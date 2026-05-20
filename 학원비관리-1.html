@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="학원비" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <title>학원비 관리</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background-attachment: fixed;
+      color: #fff;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      overscroll-behavior: none;
+    }
+    #app { display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+    button { font-family: 'Noto Sans KR', sans-serif; cursor: pointer; }
+    button:focus { outline: none; }
+    input { font-family: 'Noto Sans KR', sans-serif; }
+    input::placeholder { color: #4a5568; }
+    input:focus { outline: none; border-color: rgba(100,255,218,0.4) !important; }
+    @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+    @keyframes slideUp { from { transform:translateY(100%) } to { transform:translateY(0) } }
+    .header { width: 100%; max-width: 480px; padding: 48px 20px 0; padding-top: calc(48px + env(safe-area-inset-top)); }
+    .content { width: 100%; max-width: 480px; margin-top: 20px; }
+    .list-area { padding: 0 20px 120px; }
+    .tab-bar { display: flex; background: rgba(255,255,255,0.06); border-radius: 14px; padding: 4px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.08); }
+    .tab-btn { flex: 1; padding: 10px 0; border-radius: 10px; border: none; font-size: 13px; transition: all .2s ease; color: #8892b0; background: transparent; }
+    .tab-btn.active { background: rgba(100,255,218,0.12); color: #64ffda; font-weight: 700; box-shadow: inset 0 0 0 1px rgba(100,255,218,0.25); }
+    .academy-card { display: flex; align-items: center; gap: 14px; border-radius: 20px; padding: 18px 20px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); transition: all .25s ease; animation: fadeIn .3s ease both; }
+    .academy-card.paid { background: rgba(100,255,218,0.07); border-color: rgba(100,255,218,0.3); }
+    .dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+    .name { font-size:16px; font-weight:600; color:#e6f1ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition: all .25s; }
+    .name.paid { color:#64ffda; text-decoration:line-through; opacity:.7; }
+    .amount { font-size:14px; color:#8892b0; margin-top:2px; font-weight:500; }
+    .icon-btn { background:transparent; border:none; font-size:16px; padding:4px 6px; border-radius:8px; color:#8892b0; }
+    .check-btn { width:36px; height:36px; border-radius:50%; flex-shrink:0; font-size:16px; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; transition:all .25s; }
+    .check-btn.paid { border:none; background:linear-gradient(135deg,#64ffda,#00bcd4); transform:scale(1.05); }
+    .progress-track { background:rgba(255,255,255,0.1); border-radius:8px; height:8px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,#64ffda,#00bcd4); border-radius:8px; transition:width .5s cubic-bezier(.4,0,.2,1); }
+    .fab { position:fixed; bottom:32px; bottom:calc(32px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#64ffda,#00bcd4); color:#0a192f; border:none; border-radius:28px; padding:16px 32px; font-size:16px; font-weight:700; box-shadow:0 8px 32px rgba(100,255,218,0.35); display:flex; align-items:center; gap:8px; white-space:nowrap; transition:transform .15s; }
+    .fab:active { transform:translateX(-50%) scale(0.96); }
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; z-index:100; animation:fadeIn .2s ease; }
+    .overlay.center { align-items:center; padding:0 20px; }
+    .sheet { background:#16213e; border:1px solid rgba(255,255,255,0.1); border-radius:24px 24px 0 0; width:100%; max-width:480px; padding:28px 24px 40px; padding-bottom:calc(40px + env(safe-area-inset-bottom)); animation:slideUp .3s cubic-bezier(.4,0,.2,1); }
+    .dialog { background:#16213e; border-radius:20px; padding:28px 24px; width:100%; max-width:360px; text-align:center; }
+    .modal-input { width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:14px 16px; color:#fff; font-size:15px; }
+    .btn-cancel { flex:1; padding:15px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); background:transparent; color:#8892b0; font-size:15px; }
+    .btn-save { flex:2; padding:15px; border-radius:14px; border:none; background:linear-gradient(135deg,#64ffda,#00bcd4); color:#0a192f; font-size:15px; font-weight:700; }
+    .card-glass { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:20px 16px; margin-bottom:16px; }
+    .card-title { font-size:13px; font-weight:600; color:#ccd6f6; margin-bottom:14px; }
+    .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+    .summary-card { border-radius:18px; padding:18px 16px; }
+    .month-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .month-cell { border-radius:12px; padding:11px 12px; border:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.03); }
+    .month-cell.now { background:rgba(255,255,255,0.07); border-color:rgba(100,255,218,0.4); }
+    .month-cell.full { background:rgba(100,255,218,0.07); }
+    .empty-state { text-align:center; padding:60px 0; color:#8892b0; font-size:14px; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const STORAGE_KEY='academy-tracker-data';
+const MONTHS_KR=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const PALETTE=['#FF6B6B','#FF9F43','#FFE66D','#A8E063','#4ECDC4','#45B7D1','#9B59B6','#F06292','#78909C','#26A69A'];
+const DEFAULT_ACADEMIES=[{id:1,name:'수학학원',amount:250000,color:'#FF6B6B'},{id:2,name:'영어학원',amount:280000,color:'#4ECDC4'},{id:3,name:'태권도',amount:80000,color:'#FFE66D'}];
+
+let state={academies:[],paid:{},tab:'month',viewYear:new Date().getFullYear(),showAdd:false,editId:null,deleteConfirm:null,form:{name:'',amount:'',color:PALETTE[0]}};
+
+function getMonthKey(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;}
+const currentMonth=getMonthKey();
+function fmt(n){return n.toLocaleString('ko-KR')+'원';}
+
+function load(){
+  try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const d=JSON.parse(raw);state.academies=d.academies??DEFAULT_ACADEMIES;state.paid=d.paid??{};}else{state.academies=DEFAULT_ACADEMIES;}}catch(e){state.academies=DEFAULT_ACADEMIES;}
+}
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({academies:state.academies,paid:state.paid}));}catch(e){}}
+function setState(patch){Object.assign(state,patch);render();}
+function isPaid(id){return !!state.paid[`${currentMonth}-${id}`];}
+function togglePaid(id){const key=`${currentMonth}-${id}`;state.paid[key]=!state.paid[key];save();render();}
+
+function yearMonthData(year){
+  const total=state.academies.reduce((s,a)=>s+a.amount,0);
+  return Array.from({length:12},(_,mi)=>{
+    const mk=`${year}-${String(mi+1).padStart(2,'0')}`;
+    const pa=state.academies.filter(a=>state.paid[`${mk}-${a.id}`]);
+    return{mi,mk,paidAmt:pa.reduce((s,a)=>s+a.amount,0),total,paidCount:pa.length};
+  });
+}
+
+function openAdd(){setState({showAdd:true,editId:null,form:{name:'',amount:'',color:PALETTE[state.academies.length%PALETTE.length]}});}
+function openEdit(a){setState({showAdd:true,editId:a.id,form:{name:a.name,amount:String(a.amount),color:a.color}});}
+function saveForm(){
+  const name=state.form.name.trim();const amt=parseInt(state.form.amount,10);
+  if(!name||!amt||amt<=0)return;
+  if(state.editId){state.academies=state.academies.map(a=>a.id===state.editId?{...a,name,amount:amt,color:state.form.color}:a);}
+  else{state.academies=[...state.academies,{id:Date.now(),name,amount:amt,color:state.form.color}];}
+  save();setState({showAdd:false,editId:null});
+}
+function deleteAcademy(id){state.academies=state.academies.filter(a=>a.id!==id);save();setState({deleteConfirm:null});}
+
+function h(tag,attrs,...children){
+  const el=document.createElement(tag);
+  if(attrs)for(const[k,v]of Object.entries(attrs)){
+    if(k==='style'&&typeof v==='object')Object.assign(el.style,v);
+    else if(k.startsWith('on')&&typeof v==='function')el.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==='className')el.className=v;
+    else el.setAttribute(k,v);
+  }
+  for(const c of children){if(c==null||c===false)continue;el.append(typeof c==='object'?c:document.createTextNode(String(c)));}
+  return el;
+}
+
+function renderTabBar(){
+  return h('div',{className:'tab-bar'},
+    h('button',{className:`tab-btn${state.tab==='month'?' active':''}`,onClick:()=>setState({tab:'month'})},'📋  이번달'),
+    h('button',{className:`tab-btn${state.tab==='year'?' active':''}`,onClick:()=>setState({tab:'year'})},'📊  연간 현황')
+  );
+}
+
+function renderMonthView(){
+  const paidCount=state.academies.filter(a=>isPaid(a.id)).length;
+  const totalAmt=state.academies.reduce((s,a)=>s+a.amount,0);
+  const paidAmt=state.academies.filter(a=>isPaid(a.id)).reduce((s,a)=>s+a.amount,0);
+  const progress=state.academies.length===0?0:(paidCount/state.academies.length)*100;
+  const[yr,mo]=currentMonth.split('-');
+  const monthLabel=`${yr}년 ${parseInt(mo)}월`;
+
+  const header=h('div',{className:'header'},
+    h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}},
+      h('div',null,
+        h('div',{style:{fontSize:'12px',color:'#8892b0',letterSpacing:'2px',marginBottom:'4px'}},'학원비 관리'),
+        h('div',{style:{fontSize:'26px',fontWeight:700,letterSpacing:'-0.5px'}},monthLabel)
+      ),
+      h('div',{style:{background:'rgba(255,255,255,0.07)',borderRadius:'16px',padding:'12px 18px',textAlign:'right',border:'1px solid rgba(255,255,255,0.1)'}},
+        h('div',{style:{fontSize:'11px',color:'#8892b0',marginBottom:'2px'}},'이번달 납부'),
+        h('div',{style:{fontSize:'18px',fontWeight:700,color:'#64ffda'}},fmt(paidAmt)),
+        h('div',{style:{fontSize:'11px',color:'#8892b0'}},`/ ${fmt(totalAmt)}`)
+      )
+    ),
+    h('div',{style:{margin:'20px 0 4px'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:'8px'}},
+        h('span',{style:{fontSize:'12px',color:'#8892b0'}},'납부 현황'),
+        h('span',{style:{fontSize:'12px',color:'#64ffda',fontWeight:600}},`${paidCount} / ${state.academies.length} 완료`)
+      ),
+      h('div',{className:'progress-track'},h('div',{className:'progress-fill',style:{width:`${progress}%`}}))
+    ),
+    renderTabBar()
+  );
+
+  const listArea=h('div',{className:'list-area'});
+  if(state.academies.length===0){
+    listArea.appendChild(h('div',{className:'empty-state'},
+      h('div',{style:{fontSize:'40px',marginBottom:'12px'}},'🏫'),
+      h('div',null,'아직 등록된 학원이 없어요'),
+      h('div',{style:{marginTop:'4px',fontSize:'12px'}},'아래 + 버튼으로 추가해보세요')
+    ));
+  }
+  state.academies.forEach((a,i)=>{
+    const done=isPaid(a.id);
+    listArea.appendChild(h('div',{className:`academy-card${done?' paid':''}`,style:{'animation-delay':`${i*0.05}s`}},
+      h('div',{className:'dot',style:{background:a.color,boxShadow:`0 0 8px ${a.color}88`}}),
+      h('div',{style:{flex:1,minWidth:0}},
+        h('div',{className:`name${done?' paid':''}`},a.name),
+        h('div',{className:'amount'},fmt(a.amount))
+      ),
+      h('button',{className:'icon-btn',onClick:()=>openEdit(a)},'✏️'),
+      h('button',{className:'icon-btn',onClick:()=>setState({deleteConfirm:a.id})},'🗑️'),
+      h('button',{className:`check-btn${done?' paid':''}`,onClick:()=>togglePaid(a.id)},done?'✓':'')
+    ));
+  });
+
+  const frag=document.createDocumentFragment();
+  frag.appendChild(header);
+  const content=h('div',{className:'content'});content.appendChild(listArea);frag.appendChild(content);
+  frag.appendChild(h('button',{className:'fab',onClick:openAdd},h('span',{style:{fontSize:'20px',lineHeight:'1'}},'+'),' 학원 추가'));
+  return frag;
+}
+
+function renderYearView(){
+  const year=state.viewYear;
+  const nowMonth=new Date().getMonth();const nowYear=new Date().getFullYear();
+  const monthData=yearMonthData(year);
+  const totalMonthly=state.academies.reduce((s,a)=>s+a.amount,0);
+  const yearTotal=totalMonthly*12;
+  const yearPaid=monthData.reduce((s,m)=>s+m.paidAmt,0);
+  const fullMonths=monthData.filter(m=>m.paidCount===state.academies.length&&state.academies.length>0).length;
+  const payRate=yearTotal===0?0:Math.round((yearPaid/yearTotal)*100);
+  const maxBar=Math.max(...monthData.map(m=>m.total),1);
+
+  const header=h('div',{className:'header'},
+    h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+      h('div',null,
+        h('div',{style:{fontSize:'12px',color:'#8892b0',letterSpacing:'2px',marginBottom:'4px'}},'연간 현황'),
+        h('div',{style:{fontSize:'26px',fontWeight:700}},`${year}년`)
+      ),
+      h('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
+        h('button',{style:{width:'34px',height:'34px',borderRadius:'50%',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.1)',color:'#ccd6f6',fontSize:'18px',display:'flex',alignItems:'center',justifyContent:'center'},onClick:()=>setState({viewYear:year-1})},'‹'),
+        h('button',{style:{padding:'6px 12px',borderRadius:'10px',background:year===nowYear?'rgba(100,255,218,0.15)':'rgba(255,255,255,0.07)',border:year===nowYear?'1px solid rgba(100,255,218,0.3)':'1px solid rgba(255,255,255,0.1)',color:year===nowYear?'#64ffda':'#8892b0',fontSize:'12px'},onClick:()=>setState({viewYear:nowYear})},'올해'),
+        h('button',{style:{width:'34px',height:'34px',borderRadius:'50%',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.1)',color:year>=nowYear?'rgba(136,146,176,0.2)':'#ccd6f6',fontSize:'18px',display:'flex',alignItems:'center',justifyContent:'center'},onClick:()=>{if(year<nowYear)setState({viewYear:year+1});}},'›')
+      )
+    ),
+    renderTabBar()
+  );
+
+  const summaryGrid=h('div',{className:'summary-grid'},
+    h('div',{className:'summary-card',style:{background:'rgba(100,255,218,0.08)',border:'1px solid rgba(100,255,218,0.2)'}},
+      h('div',{style:{fontSize:'11px',color:'#8892b0',marginBottom:'6px'}},'연간 납부 완료'),
+      h('div',{style:{fontSize:'19px',fontWeight:700,color:'#64ffda'}},fmt(yearPaid)),
+      h('div',{style:{fontSize:'11px',color:'#8892b0',marginTop:'3px'}},`/ ${fmt(yearTotal)}`)
+    ),
+    h('div',{className:'summary-card',style:{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)'}},
+      h('div',{style:{fontSize:'11px',color:'#8892b0',marginBottom:'6px'}},'납부율'),
+      h('div',{style:{fontSize:'19px',fontWeight:700,color:'#e6f1ff'}},`${payRate}%`),
+      h('div',{style:{fontSize:'11px',color:'#8892b0',marginTop:'3px'}},`${fullMonths}개월 완납`)
+    )
+  );
+
+  const bars=h('div',{style:{display:'flex',alignItems:'flex-end',gap:'5px',height:'80px'}});
+  monthData.forEach(({mi,paidAmt,total,paidCount})=>{
+    const isNow=mi===nowMonth&&year===nowYear;
+    const isFuture=year===nowYear?mi>nowMonth:year>nowYear;
+    const paidH=total===0?0:(paidAmt/maxBar)*70;
+    const totalH=(total/maxBar)*70;
+    const full=state.academies.length>0&&paidCount===state.academies.length;
+    bars.appendChild(h('div',{style:{flex:'1',display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}},
+      h('div',{style:{width:'100%',position:'relative',height:'70px'}},
+        h('div',{style:{position:'absolute',bottom:0,left:0,right:0,height:`${totalH}px`,background:isFuture?'rgba(255,255,255,0.04)':'rgba(255,255,255,0.09)',borderRadius:'4px 4px 0 0'}}),
+        !isFuture&&h('div',{style:{position:'absolute',bottom:0,left:0,right:0,height:`${paidH}px`,background:full?'linear-gradient(180deg,#64ffda,#00bcd4)':'linear-gradient(180deg,#45B7D1aa,#45B7D166)',borderRadius:'4px 4px 0 0'}}),
+        isNow&&h('div',{style:{position:'absolute',top:'-8px',left:'50%',transform:'translateX(-50%)',width:'5px',height:'5px',borderRadius:'50%',background:'#64ffda',boxShadow:'0 0 6px #64ffda'}})
+      ),
+      h('div',{style:{fontSize:'9px',color:isNow?'#64ffda':'#8892b0',fontWeight:isNow?700:400}},String(mi+1))
+    ));
+  });
+  const barCard=h('div',{className:'card-glass'},
+    h('div',{className:'card-title'},'월별 납부 현황'),bars,
+    h('div',{style:{display:'flex',gap:'14px',marginTop:'10px'}},
+      h('div',{style:{display:'flex',alignItems:'center',gap:'5px'}},h('div',{style:{width:'8px',height:'8px',borderRadius:'2px',background:'linear-gradient(#64ffda,#00bcd4)'}}),h('span',{style:{fontSize:'10px',color:'#8892b0'}},'완납')),
+      h('div',{style:{display:'flex',alignItems:'center',gap:'5px'}},h('div',{style:{width:'8px',height:'8px',borderRadius:'2px',background:'#45B7D188'}}),h('span',{style:{fontSize:'10px',color:'#8892b0'}},'부분납부'))
+    )
+  );
+
+  const monthGrid=h('div',{className:'month-grid'});
+  monthData.forEach(({mi,paidAmt,total,paidCount})=>{
+    const isNow=mi===nowMonth&&year===nowYear;
+    const isFuture=year===nowYear?mi>nowMonth:year>nowYear;
+    const full=state.academies.length>0&&paidCount===state.academies.length;
+    let cls='month-cell';if(full)cls+=' full';else if(isNow)cls+=' now';
+    monthGrid.appendChild(h('div',{className:cls},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'5px'}},
+        h('span',{style:{fontSize:'12px',fontWeight:600,color:isNow?'#64ffda':'#ccd6f6'}},MONTHS_KR[mi]),
+        full?h('span',{style:{fontSize:'10px',color:'#64ffda'}},'✓완납'):
+        (!isFuture&&paidCount>0)?h('span',{style:{fontSize:'10px',color:'#45B7D1'}},`${paidCount}/${state.academies.length}`):
+        isFuture?h('span',{style:{fontSize:'10px',color:'rgba(136,146,176,0.25)'}},'예정'):h('span')
+      ),
+      h('div',{style:{fontSize:'12px',color:isFuture?'rgba(136,146,176,0.3)':full?'#64ffda':'#e6f1ff',fontWeight:600}},isFuture?fmt(total):fmt(paidAmt)),
+      !isFuture&&!full?h('div',{style:{fontSize:'10px',color:'#8892b0',marginTop:'1px'}},`/ ${fmt(total)}`):null
+    ));
+  });
+
+  const acadCard=h('div',{className:'card-glass'},h('div',{className:'card-title'},'학원별 연간 현황'));
+  state.academies.forEach(a=>{
+    let paidM=0,paidA=0;
+    for(let mi=0;mi<12;mi++){const mk=`${year}-${String(mi+1).padStart(2,'0')}`;if(state.paid[`${mk}-${a.id}`]){paidM++;paidA+=a.amount;}}
+    const pct=a.amount*12===0?0:(paidA/(a.amount*12))*100;
+    const dots=h('div',{style:{display:'flex',gap:'3px'}});
+    for(let mi=0;mi<12;mi++){
+      const mk=`${year}-${String(mi+1).padStart(2,'0')}`;
+      const done=!!state.paid[`${mk}-${a.id}`];
+      const isFuture=year===nowYear?mi>nowMonth:year>nowYear;
+      const isNow=mi===nowMonth&&year===nowYear;
+      dots.appendChild(h('div',{title:MONTHS_KR[mi],style:{flex:1,height:'7px',borderRadius:'3px',background:done?a.color:isFuture?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.13)',boxShadow:done?`0 0 5px ${a.color}66`:'',outline:isNow?`1.5px solid ${a.color}88`:'',outlineOffset:'1px'}}));
+    }
+    acadCard.appendChild(h('div',{style:{marginBottom:'18px'}},
+      h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}},
+        h('div',{style:{display:'flex',alignItems:'center',gap:'8px'}},
+          h('div',{style:{width:'8px',height:'8px',borderRadius:'50%',background:a.color,boxShadow:`0 0 6px ${a.color}88`,flexShrink:0}}),
+          h('span',{style:{fontSize:'13px',fontWeight:600,color:'#e6f1ff'}},a.name)
+        ),
+        h('span',{style:{fontSize:'12px',color:'#64ffda',fontWeight:600}},`${paidM}개월 납부`)
+      ),
+      h('div',{style:{background:'rgba(255,255,255,0.08)',borderRadius:'6px',height:'6px',overflow:'hidden',marginBottom:'5px'}},
+        h('div',{style:{height:'100%',width:`${pct}%`,background:`linear-gradient(90deg,${a.color},${a.color}88)`,borderRadius:'6px'}})
+      ),
+      h('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:'8px'}},
+        h('span',{style:{fontSize:'11px',color:'#8892b0'}},`${fmt(paidA)} 납부`),
+        h('span',{style:{fontSize:'11px',color:'#8892b0'}},`연 ${fmt(a.amount*12)}`)
+      ),
+      dots,
+      h('div',{style:{display:'flex',justifyContent:'space-between',marginTop:'3px'}},
+        ...[0,3,6,9,11].map(mi=>h('span',{style:{fontSize:'8px',color:'rgba(136,146,176,0.4)'}},`${mi+1}월`))
+      )
+    ));
+  });
+
+  const yearArea=h('div',{style:{padding:'0 20px 120px'}},summaryGrid,barCard,h('div',{className:'card-glass'},h('div',{className:'card-title'},'월별 상세'),monthGrid),acadCard);
+  const frag=document.createDocumentFragment();
+  frag.appendChild(header);
+  const content=h('div',{className:'content'});content.appendChild(yearArea);frag.appendChild(content);
+  return frag;
+}
+
+function renderModal(){
+  const isEdit=!!state.editId;
+  const overlay=h('div',{className:'overlay',onClick:e=>{if(e.target===overlay)setState({showAdd:false,editId:null});}});
+  const sheet=h('div',{className:'sheet'});
+  sheet.appendChild(h('div',{style:{fontSize:'18px',fontWeight:700,marginBottom:'24px'}},isEdit?'학원 수정':'학원 추가'));
+  const nameInput=h('input',{className:'modal-input',placeholder:'예) 수학학원',value:state.form.name});
+  nameInput.addEventListener('input',e=>{state.form.name=e.target.value;});
+  sheet.appendChild(h('div',{style:{marginBottom:'16px'}},h('div',{style:{fontSize:'12px',color:'#8892b0',marginBottom:'8px'}},'학원 이름'),nameInput));
+  const amtInput=h('input',{className:'modal-input',placeholder:'예) 250000',inputmode:'numeric',value:state.form.amount});
+  amtInput.addEventListener('input',e=>{state.form.amount=e.target.value.replace(/[^0-9]/g,'');render();});
+  const amtWrap=h('div',{style:{marginBottom:'20px'}},h('div',{style:{fontSize:'12px',color:'#8892b0',marginBottom:'8px'}},'월 납부금액 (원)'),amtInput);
+  if(state.form.amount)amtWrap.appendChild(h('div',{style:{fontSize:'12px',color:'#64ffda',marginTop:'6px',paddingLeft:'2px'}},fmt(parseInt(state.form.amount,10)||0)));
+  sheet.appendChild(amtWrap);
+  const colorRow=h('div',{style:{display:'flex',gap:'8px',flexWrap:'wrap'}});
+  PALETTE.forEach(c=>{
+    colorRow.appendChild(h('button',{style:{width:'32px',height:'32px',borderRadius:'50%',background:c,border:state.form.color===c?'3px solid #fff':'3px solid transparent',transform:state.form.color===c?'scale(1.2)':'scale(1)',boxShadow:state.form.color===c?`0 0 12px ${c}`:'',transition:'transform .15s'},onClick:()=>{state.form.color=c;render();}}));
+  });
+  sheet.appendChild(h('div',{style:{marginBottom:'24px'}},h('div',{style:{fontSize:'12px',color:'#8892b0',marginBottom:'10px'}},'색상'),colorRow));
+  sheet.appendChild(h('div',{style:{display:'flex',gap:'10px'}},
+    h('button',{className:'btn-cancel',onClick:()=>setState({showAdd:false,editId:null})},'취소'),
+    h('button',{className:'btn-save',onClick:saveForm},isEdit?'수정하기':'추가하기')
+  ));
+  overlay.appendChild(sheet);return overlay;
+}
+
+function renderDeleteConfirm(){
+  const a=state.academies.find(x=>x.id===state.deleteConfirm);
+  const overlay=h('div',{className:'overlay center',onClick:e=>{if(e.target===overlay)setState({deleteConfirm:null});}});
+  overlay.appendChild(h('div',{className:'dialog',style:{border:'1px solid rgba(255,100,100,0.3)'}},
+    h('div',{style:{fontSize:'32px',marginBottom:'12px'}},'🗑️'),
+    h('div',{style:{fontSize:'17px',fontWeight:600,marginBottom:'8px'}},a?.name||''),
+    h('div',{style:{fontSize:'13px',color:'#8892b0',marginBottom:'24px'}},'삭제하면 납부 기록도 함께 사라져요'),
+    h('div',{style:{display:'flex',gap:'10px'}},
+      h('button',{style:{flex:1,padding:'13px',borderRadius:'12px',border:'1px solid rgba(255,255,255,0.12)',background:'transparent',color:'#8892b0',fontSize:'14px'},onClick:()=>setState({deleteConfirm:null})},'취소'),
+      h('button',{style:{flex:1,padding:'13px',borderRadius:'12px',border:'none',background:'linear-gradient(135deg,#ff6b6b,#ee5a24)',color:'#fff',fontSize:'14px',fontWeight:700},onClick:()=>deleteAcademy(state.deleteConfirm)},'삭제')
+    )
+  ));
+  return overlay;
+}
+
+function render(){
+  const app=document.getElementById('app');app.innerHTML='';
+  const frag=document.createDocumentFragment();
+  frag.appendChild(state.tab==='month'?renderMonthView():renderYearView());
+  if(state.showAdd)frag.appendChild(renderModal());
+  if(state.deleteConfirm)frag.appendChild(renderDeleteConfirm());
+  app.appendChild(frag);
+}
+
+load();render();
+</script>
+</body>
+</html>
